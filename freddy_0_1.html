@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="de"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Freddy 0.1</title><style>
+:root{font-family:system-ui,Arial,sans-serif;color:#f5f8ff;background:#101827}*{box-sizing:border-box}
+body{margin:0;min-height:100vh;display:flex;justify-content:center}main{width:min(850px,100%);padding:24px}
+header{display:flex;justify-content:space-between;align-items:center}h1{margin:0;font-size:2.3rem}.sub{color:#adbed4}
+.clock{text-align:center;font-size:clamp(3rem,10vw,5.5rem);font-weight:700;margin:30px 0 0}.date{text-align:center;color:#adbed4}
+.center{text-align:center;margin:26px auto}.orb{border:0;background:#244a80;border-radius:50%;width:140px;height:140px;color:white;font-size:4rem;cursor:pointer;box-shadow:0 0 38px #265ea255}
+.orb:focus-visible,button:focus-visible{outline:4px solid #fbd36d;outline-offset:4px}.orb.active{background:#bd4d61;animation:pulse 1s infinite alternate}@keyframes pulse{to{box-shadow:0 0 45px #e88b9b}}
+.status{color:#b7c9e0;min-height:24px}.reply{background:#1b2b42;border-radius:16px;padding:18px;min-height:85px;font-size:1.12rem;line-height:1.5}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:20px}.tiles button{background:#263954;border:1px solid #3b5677;color:white;border-radius:14px;padding:18px 8px;font-size:1rem;cursor:pointer}
+footer{margin-top:25px;color:#aebdd0;font-size:.85rem;line-height:1.5}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+input{width:20px;height:20px}@media(max-width:500px){main{padding:15px}.tiles{grid-template-columns:1fr 1fr}.orb{width:115px;height:115px}}
+</style></head><body><main>
+<header><div><h1>Freddy <span style="font-size:.8rem;color:#9fb3cc">0.1</span></h1><div class="sub">Dein Familienassistent</div></div><div aria-label="Status">🏠</div></header>
+<div class="clock" id="clock">--:--</div><div class="date" id="date"></div>
+<section class="center"><button class="orb" id="mic" aria-label="Sprachaufnahme starten">🎙</button><h2>Hallo, ich bin Freddy!</h2><div class="status" id="status" role="status">Tippe auf das Mikrofon</div></section>
+<section class="reply" id="reply" aria-live="polite">Moin! Ich bin bereit für unseren ersten Test. Frag mich nach der Uhrzeit oder erzähl mir, dass du einen Witz hören möchtest.</section>
+<div class="tiles"><button data-ask="Wie spät ist es?">🕒 Uhrzeit</button><button data-ask="Erzähl einen Witz">😄 Witz</button><button data-ask="Was kannst du?">✨ Hilfe</button></div>
+<footer><label class="row"><input type="checkbox" id="voice" checked> Antworten laut vorlesen</label>
+<p>Testversion: Antworten sind vorprogrammiert, noch keine KI-Verbindung. „Hey Freddy“ ist noch nicht aktiviert. Sprachaufnahme startet nur über den Mikrofonknopf.</p></footer>
+</main><script>
+const $=id=>document.getElementById(id);
+function updateClock(){const d=new Date();$('clock').textContent=d.toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'});$('date').textContent=d.toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long',year:'numeric'});}
+updateClock();setInterval(updateClock,10000);
+function speak(t){if(!$('voice').checked||!('speechSynthesis' in window))return;speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(t);u.lang='de-DE';u.rate=.98;speechSynthesis.speak(u)}
+function respond(q){const s=q.toLowerCase();let r;
+if(/uhr|spät|zeit/.test(s))r='Es ist '+new Date().toLocaleTimeString('de-DE',{hour:'2-digit',minute:'2-digit'})+' Uhr.';
+else if(/witz|lustig|lachen/.test(s))r='Warum können Geister so schlecht lügen? Weil man durch sie hindurchsieht!';
+else if(/hallo|moin|guten tag|freddy/.test(s))r='Moin! Freddy meldet sich zum Dienst. Kaffee kochen kann ich leider noch nicht.';
+else if(/kannst du|hilfe|funktion/.test(s))r='In dieser ersten Version kann ich die Uhrzeit sagen und Witze erzählen. Bald kommen richtige KI-Gespräche dazu.';
+else if(/wetter/.test(s))r='Das Wetter kann ich noch nicht live abrufen. Das bauen wir in einer späteren Version ein.';
+else r='Das habe ich gehört: '+q+'. Für eine richtige Antwort brauche ich noch meine KI-Verbindung.';
+$('reply').textContent=r;speak(r)}
+document.querySelectorAll('[data-ask]').forEach(b=>b.addEventListener('click',()=>respond(b.dataset.ask)));
+const SR=window.SpeechRecognition||window.webkitSpeechRecognition;let rec;
+if(SR){rec=new SR();rec.lang='de-DE';rec.interimResults=false;rec.maxAlternatives=1;
+rec.onstart=()=>{$('status').textContent='Ich höre zu …';$('mic').classList.add('active')};
+rec.onend=()=>{$('mic').classList.remove('active');$('status').textContent='Tippe auf das Mikrofon'};
+rec.onerror=e=>{$('status').textContent='Sprachaufnahme fehlgeschlagen: '+e.error};
+rec.onresult=e=>{const q=e.results[0][0].transcript;$('status').textContent='Erkannt: '+q;respond(q)};
+}
+$('mic').addEventListener('click',()=>{if(!rec){$('status').textContent='Dieser Browser unterstützt diese Spracherkennung nicht.';return}try{rec.start()}catch(e){$('status').textContent='Bitte kurz warten und erneut tippen.'}});
+</script></body></html>
